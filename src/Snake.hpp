@@ -21,6 +21,7 @@ public:
   bool move();
   void grow();
   void render(sf::RenderWindow &window);
+  bool hasEaten(const sf::Vector2f &targetPos);
 };
 
 #endif

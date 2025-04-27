@@ -44,3 +44,7 @@ void Snake::render(sf::RenderWindow &window) {
 }
 
 void Snake::grow() { ++length; }
+
+bool Snake::hasEaten(const sf::Vector2f &targetPos) {
+  return head.x == targetPos.x && head.y == targetPos.y;
+}
