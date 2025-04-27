@@ -1,3 +1,4 @@
+#include "Food.hpp"
 #include "Snake.hpp"
 #include "utils.hpp"
 #include <SFML/Graphics.hpp>
@@ -13,6 +14,8 @@ int main() {
   const float cellSize = BOARD_WIDTH * 1.f / GRID_SIZE;
 
   Snake snake(cellSize);
+  Food food(cellSize);
+
   const std::map<sf::Keyboard::Scan, sf::Vector2i> directions = {
       {sf::Keyboard::Scan::Right, {1, 0}},
       {sf::Keyboard::Scan::Left, {-1, 0}},
@@ -35,8 +38,13 @@ int main() {
         }
       }
     }
+    if (snake.hasEaten(food.getPosition())) {
+      snake.grow();
+      food.setPosition(getRandomPosition(GRID_SIZE, GRID_SIZE));
+    }
     window.clear();
     snake.render(window);
+    food.render(window);
     window.display();
   }
 }
