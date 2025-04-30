@@ -48,3 +48,10 @@ void Snake::grow() { ++length; }
 bool Snake::hasEaten(const sf::Vector2f &targetPos) {
   return head.x == targetPos.x && head.y == targetPos.y;
 }
+void Snake::reset() {
+  head = getRandomPosition(GRID_SIZE, GRID_SIZE);
+  length = 1;
+  direction = {0, 0};
+  segments.clear();
+  segments.push_front(head);
+}

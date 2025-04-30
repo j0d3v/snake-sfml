@@ -20,6 +20,7 @@ public:
   void turn(sf::Vector2i dir);
   bool move();
   void grow();
+  void reset();
   void render(sf::RenderWindow &window);
   bool hasEaten(const sf::Vector2f &targetPos);
 };
