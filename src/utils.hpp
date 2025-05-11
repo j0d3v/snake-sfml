@@ -11,7 +11,7 @@ const int GRID_SIZE = 20;
 
 inline sf::Vector2f getRandomPosition(int width, int height) {
   float x = static_cast<float>(std::rand() % width);
-  float y = static_cast<float>(std::rand() % height);
+  float y = static_cast<float>(std::rand() % height) + 2;
   return sf::Vector2f(x, y);
 }
 inline sf::Vector2f round(const sf::Vector2f vector) {
