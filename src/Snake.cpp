@@ -19,7 +19,7 @@ bool Snake::move() {
   newHead.x += direction.x;
   newHead.y += direction.y;
 
-  if (newHead.x < 0 || newHead.y < 0 || newHead.x >= GRID_SIZE ||
+  if (newHead.x < 0 || newHead.y < 2 || newHead.x >= GRID_SIZE ||
       newHead.y >= GRID_SIZE)
     return false;
 
