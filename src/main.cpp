@@ -1,152 +1,133 @@
 #include "Food.hpp"
+#include "Game.hpp"
 #include "Snake.hpp"
 #include "utils.hpp"
 #include <SFML/Graphics.hpp>
-#include <SFML/Graphics/RectangleShape.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <SFML/Window/VideoMode.hpp>
 #include <iostream>
-#include <map>
+
+constexpr unsigned int WINDOW_SIZE = BOARD_WIDTH;
+constexpr float CELL_SIZE = static_cast<float>(WINDOW_SIZE) / GRID_SIZE;
+constexpr unsigned int SCORE_LABEL_HEIGHT = CELL_SIZE * 2;
+constexpr float BORDER_THICKNESS = 2.f;
 
 sf::Text createCenteredText(sf::RenderWindow &window, const sf::Font &font,
                             const std::string &message,
                             unsigned int charSize = 24) {
-  sf::Text text(font, message);
-  text.setCharacterSize(charSize);
-
-  auto center = text.getGlobalBounds().size / 2.f;
-  auto localBounds = center + text.getLocalBounds().position;
-
-  text.setOrigin(round(localBounds));
-  text.setPosition(sf::Vector2f{window.getSize() / 2u});
-
+  sf::Text text(message, font, charSize);
+  auto bounds = text.getLocalBounds();
+  text.setOrigin(bounds.width / 2.f, bounds.height / 2.f);
+  text.setPosition(window.getSize().x / 2.f, window.getSize().y / 2.f);
   return text;
 }
 
 int main() {
-  sf::RenderWindow window(sf::VideoMode({BOARD_WIDTH, BOARD_WIDTH}), "SFML");
+  Game game;
+  sf::RenderWindow window(sf::VideoMode(WINDOW_SIZE, WINDOW_SIZE),
+                          "SFML Snake");
   window.setFramerateLimit(60);
 
-  const float CELL_SIZE = BOARD_WIDTH * 1.f / GRID_SIZE;
-  const unsigned int SCORE_LABEL_H = CELL_SIZE * 2;
-  const int BORDER_THICKNESS = 2;
-
-  sf::RectangleShape scoreLabel;
-  scoreLabel.setSize({BOARD_WIDTH - BORDER_THICKNESS * 2,
-                      SCORE_LABEL_H * 1.f - BORDER_THICKNESS * 2});
-  scoreLabel.setPosition({BORDER_THICKNESS, BORDER_THICKNESS});
-  scoreLabel.setOutlineThickness(BORDER_THICKNESS);
-  scoreLabel.setFillColor(sf::Color::Transparent);
-  scoreLabel.setOutlineColor(sf::Color::Yellow);
+  sf::RectangleShape scoreBg;
+  scoreBg.setSize({WINDOW_SIZE - 2 * BORDER_THICKNESS,
+                   SCORE_LABEL_HEIGHT - 2 * BORDER_THICKNESS});
+  scoreBg.setPosition({BORDER_THICKNESS, BORDER_THICKNESS});
+  scoreBg.setOutlineThickness(BORDER_THICKNESS);
+  scoreBg.setFillColor(sf::Color::Transparent);
+  scoreBg.setOutlineColor(sf::Color::Yellow);
 
   Snake snake(CELL_SIZE);
   Food food(CELL_SIZE);
-  sf::Font font;
 
-  if (!font.openFromFile("assets/PixelOperator.ttf")) {
-    std::cerr << "Font not loaded" << std::endl;
-    return 1;
+  sf::Font font;
+  if (!font.loadFromFile("assets/PixelOperator.ttf")) {
+    std::cerr << "Error: could not load font\n";
+    return EXIT_FAILURE;
   }
 
-  unsigned int score = 0;
-  unsigned int bestScore = 0;
+  unsigned int score = 0, bestScore = 0;
+  sf::Text currentScore("Score: 0", font, 30);
+  currentScore.setPosition(10.f, 3.f);
 
-  sf::Text currentScoreText(font, "Score : 0");
-  currentScoreText.setCharacterSize(30);
-  currentScoreText.setPosition({10, 3});
+  sf::Text bestScoreText("Best: 0", font, 30);
+  bestScoreText.setPosition(WINDOW_SIZE - bestScoreText.getLocalBounds().width -
+                                BORDER_THICKNESS - 10.f,
+                            3.f);
 
-  sf::Text bestScoreText(font, "Score : " + std::to_string(bestScore));
-  bestScoreText.setCharacterSize(30);
-  bestScoreText.setPosition({BOARD_WIDTH -
-                                 bestScoreText.getLocalBounds().size.x -
-                                 BORDER_THICKNESS - 10,
-                             3});
+  auto startText = createCenteredText(window, font, "Press Enter to start");
+  auto pauseText = createCenteredText(window, font, "Paused - Press Space");
+  auto gameOverText =
+      createCenteredText(window, font, "Game Over - Press Enter");
 
-  sf::Text startMsg = createCenteredText(window, font, "Press Enter to start");
-  sf::Text pauseMsg =
-      createCenteredText(window, font, "Paused! Press Space to resume");
-  sf::Text gameOverMsg =
-      createCenteredText(window, font, "Game Over! Press Enter to restart");
-
-  enum class GameState { NotStarted, Started, Paused, Over };
-  GameState currentGameState = GameState::NotStarted;
-
-  const std::map<sf::Keyboard::Scan, sf::Vector2i> directions = {
-      {sf::Keyboard::Scan::Right, {1, 0}},
-      {sf::Keyboard::Scan::Left, {-1, 0}},
-      {sf::Keyboard::Scan::Up, {0, -1}},
-      {sf::Keyboard::Scan::Down, {0, 1}}};
+  std::map<sf::Keyboard::Key, sf::Vector2i> directions = {
+      {sf::Keyboard::Right, {1, 0}},
+      {sf::Keyboard::Left, {-1, 0}},
+      {sf::Keyboard::Up, {0, -1}},
+      {sf::Keyboard::Down, {0, 1}}};
 
   while (window.isOpen()) {
-    while (auto eventOpt = window.pollEvent()) {
-      const sf::Event &event = *eventOpt;
-
-      if (event.is<sf::Event::Closed>()) {
+    sf::Event event;
+    while (window.pollEvent(event)) {
+      if (event.type == sf::Event::Closed)
         window.close();
-      }
 
-      if (auto keyPressed = event.getIf<sf::Event::KeyPressed>()) {
-        auto it = directions.find(keyPressed->scancode);
-        if (it != directions.end()) {
-          snake.turn(it->second);
-          if (!snake.move()) {
-            snake.reset();
-            food.setPosition(getRandomPosition(GRID_SIZE, GRID_SIZE));
-
-            if (score > bestScore) {
-              bestScore = score;
-              bestScoreText.setString("Score : " + std::to_string(bestScore));
+      if (event.type == sf::Event::KeyPressed) {
+        auto key = event.key.code;
+        if (key == sf::Keyboard::Enter && !game.started()) {
+          game.start();
+        } else if (key == sf::Keyboard::Space) {
+          game.togglePause();
+        } else {
+          if (game.started() && !game.paused()) {
+            if (auto it = directions.find(key); it != directions.end()) {
+              snake.turn(it->second);
+              if (!snake.move()) {
+                game.end();
+                snake.reset();
+                food.setPosition(getRandomPosition(GRID_SIZE, GRID_SIZE));
+                if (score > bestScore) {
+                  bestScore = score;
+                  bestScoreText.setString("Best: " + std::to_string(bestScore));
+                }
+                score = 0;
+                currentScore.setString("Score: 0");
+              }
             }
-
-            score = 0;
-            currentScoreText.setString("Score : 0");
-            currentGameState = GameState::Over;
-          }
-        } else if ((currentGameState == GameState::NotStarted ||
-                    currentGameState == GameState::Over) &&
-                   keyPressed->scancode == sf::Keyboard::Scancode::Enter) {
-          currentGameState = GameState::Started;
-        } else if (keyPressed->scancode == sf::Keyboard::Scancode::Space) {
-          if (currentGameState == GameState::Paused) {
-            currentGameState = GameState::Started;
-          } else {
-            currentGameState = GameState::Paused;
           }
         }
       }
     }
 
-    if (snake.hasEaten(food.getPosition())) {
+    if (game.started() && snake.hasEaten(food.getPosition())) {
       snake.grow();
       food.setPosition(getRandomPosition(GRID_SIZE, GRID_SIZE));
-      currentScoreText.setString("Score : " + std::to_string(++score));
+      currentScore.setString("Score: " + std::to_string(++score));
     }
 
     window.clear();
-    window.draw(scoreLabel);
-    window.draw(currentScoreText);
+    window.draw(scoreBg);
+    window.draw(currentScore);
     window.draw(bestScoreText);
 
-    switch (currentGameState) {
+    switch (game.getState()) {
     case GameState::NotStarted:
-      window.draw(startMsg);
+      window.draw(startText);
       break;
-
     case GameState::Started:
       snake.render(window);
       food.render(window);
       break;
-
     case GameState::Paused:
-      window.draw(pauseMsg);
+      window.draw(pauseText);
       break;
-
     case GameState::Over:
-      window.draw(gameOverMsg);
+      window.draw(gameOverText);
       break;
     }
 
     window.display();
   }
+
+  return 0;
 }
