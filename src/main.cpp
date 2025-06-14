@@ -8,10 +8,12 @@
 #include <SFML/Window/VideoMode.hpp>
 #include <iostream>
 
-constexpr unsigned int WINDOW_SIZE = BOARD_WIDTH;
-constexpr float CELL_SIZE = static_cast<float>(WINDOW_SIZE) / GRID_SIZE;
-constexpr unsigned int SCORE_LABEL_HEIGHT = CELL_SIZE * 2;
-constexpr float BORDER_THICKNESS = 2.f;
+const unsigned int WINDOW_SIZE = BOARD_WIDTH;
+const float CELL_SIZE = static_cast<float>(WINDOW_SIZE) / GRID_SIZE;
+const float SCORE_LABEL_HEIGHT = (CELL_SIZE - BORDER_THICKNESS) * 2;
+const float SCORE_LABEL_WIDTH = WINDOW_SIZE - 2 * BORDER_THICKNESS;
+const float BORDER_THICKNESS = 2.f;
+const float SCORE_LABEL_PADDING = 16.f;
 
 sf::Text createCenteredText(sf::RenderWindow &window, const sf::Font &font,
                             const std::string &message,
@@ -24,36 +26,27 @@ sf::Text createCenteredText(sf::RenderWindow &window, const sf::Font &font,
 }
 
 int main() {
-  Game game;
-  sf::RenderWindow window(sf::VideoMode(WINDOW_SIZE, WINDOW_SIZE),
-                          "SFML Snake");
-  window.setFramerateLimit(60);
-
-  sf::RectangleShape scoreBg;
-  scoreBg.setSize({WINDOW_SIZE - 2 * BORDER_THICKNESS,
-                   SCORE_LABEL_HEIGHT - 2 * BORDER_THICKNESS});
-  scoreBg.setPosition({BORDER_THICKNESS, BORDER_THICKNESS});
-  scoreBg.setOutlineThickness(BORDER_THICKNESS);
-  scoreBg.setFillColor(sf::Color::Transparent);
-  scoreBg.setOutlineColor(sf::Color::Yellow);
-
-  Snake snake(CELL_SIZE);
-  Food food(CELL_SIZE);
-
   sf::Font font;
   if (!font.loadFromFile("assets/PixelOperator.ttf")) {
     std::cerr << "Error: could not load font\n";
     return EXIT_FAILURE;
   }
 
-  unsigned int score = 0, bestScore = 0;
-  sf::Text currentScore("Score: 0", font, 30);
-  currentScore.setPosition(10.f, 3.f);
+  Game game;
+  Score gameScore(font, 30);
+  Snake snake(CELL_SIZE);
+  Food food(CELL_SIZE);
 
-  sf::Text bestScoreText("Best: 0", font, 30);
-  bestScoreText.setPosition(WINDOW_SIZE - bestScoreText.getLocalBounds().width -
-                                BORDER_THICKNESS - 10.f,
-                            3.f);
+  sf::RenderWindow window(sf::VideoMode(WINDOW_SIZE, WINDOW_SIZE),
+                          "SFML Snake");
+  window.setFramerateLimit(60);
+
+  sf::RectangleShape scoreBg;
+  scoreBg.setSize({SCORE_LABEL_WIDTH, SCORE_LABEL_HEIGHT});
+  scoreBg.setPosition({BORDER_THICKNESS, BORDER_THICKNESS});
+  scoreBg.setOutlineThickness(BORDER_THICKNESS);
+  scoreBg.setFillColor(sf::Color::Transparent);
+  scoreBg.setOutlineColor(sf::Color::Yellow);
 
   auto startText = createCenteredText(window, font, "Press Enter to start");
   auto pauseText = createCenteredText(window, font, "Paused - Press Space");
@@ -86,12 +79,7 @@ int main() {
                 game.end();
                 snake.reset();
                 food.setPosition(getRandomPosition(GRID_SIZE, GRID_SIZE));
-                if (score > bestScore) {
-                  bestScore = score;
-                  bestScoreText.setString("Best: " + std::to_string(bestScore));
-                }
-                score = 0;
-                currentScore.setString("Score: 0");
+                gameScore.reset();
               }
             }
           }
@@ -102,13 +90,12 @@ int main() {
     if (game.started() && snake.hasEaten(food.getPosition())) {
       snake.grow();
       food.setPosition(getRandomPosition(GRID_SIZE, GRID_SIZE));
-      currentScore.setString("Score: " + std::to_string(++score));
+      gameScore.increase();
     }
 
     window.clear();
     window.draw(scoreBg);
-    window.draw(currentScore);
-    window.draw(bestScoreText);
+    gameScore.draw(window);
 
     switch (game.getState()) {
     case GameState::NotStarted:
