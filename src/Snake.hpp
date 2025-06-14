@@ -12,7 +12,7 @@ private:
   sf::RectangleShape square;
   std::deque<sf::Vector2f> segments;
   sf::Vector2i direction;
-  int length = 1;
+  std::size_t length = 1;
 
 public:
   Snake(float size);
