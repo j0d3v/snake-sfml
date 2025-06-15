@@ -15,16 +15,6 @@ const float SCORE_LABEL_WIDTH = WINDOW_SIZE - 2 * BORDER_THICKNESS;
 const float BORDER_THICKNESS = 2.f;
 const float SCORE_LABEL_PADDING = 16.f;
 
-sf::Text createCenteredText(sf::RenderWindow &window, const sf::Font &font,
-                            const std::string &message,
-                            unsigned int charSize = 24) {
-  sf::Text text(message, font, charSize);
-  auto bounds = text.getLocalBounds();
-  text.setOrigin(bounds.width / 2.f, bounds.height / 2.f);
-  text.setPosition(window.getSize().x / 2.f, window.getSize().y / 2.f);
-  return text;
-}
-
 int main() {
   sf::Font font;
   if (!font.loadFromFile("assets/PixelOperator.ttf")) {
@@ -32,13 +22,13 @@ int main() {
     return EXIT_FAILURE;
   }
 
-  Game game;
+  sf::RenderWindow window(sf::VideoMode(WINDOW_SIZE, WINDOW_SIZE),
+                          "SFML Snake");
+  Game game(window, font);
   Score gameScore(font, 30);
   Snake snake(CELL_SIZE);
   Food food(CELL_SIZE);
 
-  sf::RenderWindow window(sf::VideoMode(WINDOW_SIZE, WINDOW_SIZE),
-                          "SFML Snake");
   window.setFramerateLimit(60);
 
   sf::RectangleShape scoreBg;
@@ -47,11 +37,6 @@ int main() {
   scoreBg.setOutlineThickness(BORDER_THICKNESS);
   scoreBg.setFillColor(sf::Color::Transparent);
   scoreBg.setOutlineColor(sf::Color::Yellow);
-
-  auto startText = createCenteredText(window, font, "Press Enter to start");
-  auto pauseText = createCenteredText(window, font, "Paused - Press Space");
-  auto gameOverText =
-      createCenteredText(window, font, "Game Over - Press Enter");
 
   std::map<sf::Keyboard::Key, sf::Vector2i> directions = {
       {sf::Keyboard::Right, {1, 0}},
@@ -99,17 +84,17 @@ int main() {
 
     switch (game.getState()) {
     case GameState::NotStarted:
-      window.draw(startText);
+      game.displayMsg();
       break;
     case GameState::Started:
       snake.render(window);
       food.render(window);
       break;
     case GameState::Paused:
-      window.draw(pauseText);
+      game.setMessage("Paused - Press Space")->displayMsg();
       break;
     case GameState::Over:
-      window.draw(gameOverText);
+      game.setMessage("Lost ! - Press Enter")->displayMsg();
       break;
     }
 

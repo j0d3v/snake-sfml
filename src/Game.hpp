@@ -15,10 +15,12 @@ enum class GameState { NotStarted, Started, Paused, Over };
 
 class Game {
 private:
+  sf::RenderWindow *window;
   GameState state;
+  sf::Text message;
 
 public:
-  Game();
+  Game(sf::RenderWindow &w, const sf::Font &font);
 
   // Game control methods
   void start();
@@ -29,7 +31,10 @@ public:
   bool started() const;
   bool paused() const;
   bool over() const;
+
   GameState getState();
+  Game *setMessage(std::string msg);
+  void displayMsg();
 };
 
 class Score {

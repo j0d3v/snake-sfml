@@ -1,6 +1,14 @@
 #include "Game.hpp"
+#include <SFML/Graphics/RenderWindow.hpp>
+#include <string>
 
-Game::Game() : state(GameState::NotStarted) {}
+Game::Game(sf::RenderWindow &w, const sf::Font &font)
+    : state(GameState::NotStarted), message("Press Enter to start", font, 30) {
+  window = &w;
+  auto bounds = message.getLocalBounds();
+  message.setOrigin(bounds.width / 2.f, bounds.height / 2.f);
+  message.setPosition(window->getSize().x / 2.f, window->getSize().y / 2.f);
+}
 
 // Game control methods
 void Game::start() {
@@ -32,6 +40,11 @@ bool Game::paused() const { return state == GameState::Paused; }
 bool Game::over() const { return state == GameState::Over; }
 
 GameState Game::getState() { return this->state; }
+Game *Game::setMessage(std::string msg) {
+  message.setString(msg);
+  return this;
+}
+void Game::displayMsg() { window->draw(this->message); }
 
 // Score class
 Score::Score(sf::Font &font, unsigned int fontSize) : current(0), best(0) {
