@@ -1,7 +1,6 @@
 #include "Snake.hpp"
 #include "utils.hpp"
 #include <SFML/System/Vector2.hpp>
-#include <algorithm>
 
 Snake::Snake(float size) {
   square.setSize({size, size});
@@ -12,7 +11,13 @@ Snake::Snake(float size) {
   direction = {0, 0};
 }
 
-void Snake::turn(sf::Vector2i dir) { direction = dir; }
+void Snake::turn(sf::Vector2i dir) {
+  // Prevent immediate direction reversal
+  if (dir + direction == sf::Vector2i(0, 0))
+    return;
+
+  direction = dir;
+}
 
 bool Snake::move() {
   sf::Vector2f newHead = head;
