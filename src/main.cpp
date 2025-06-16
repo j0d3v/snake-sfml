@@ -31,8 +31,7 @@ int main() {
 
   window.setFramerateLimit(60);
 
-  sf::RectangleShape scoreBg;
-  scoreBg.setSize({SCORE_LABEL_WIDTH, SCORE_LABEL_HEIGHT});
+  sf::RectangleShape scoreBg({SCORE_LABEL_WIDTH, SCORE_LABEL_HEIGHT});
   scoreBg.setPosition({BORDER_THICKNESS, BORDER_THICKNESS});
   scoreBg.setOutlineThickness(BORDER_THICKNESS);
   scoreBg.setFillColor(sf::Color::Transparent);
@@ -60,12 +59,8 @@ int main() {
           if (game.started() && !game.paused()) {
             if (auto it = directions.find(key); it != directions.end()) {
               snake.turn(it->second);
-              if (!snake.move()) {
+              if (!snake.move())
                 game.end();
-                snake.reset();
-                food.setPosition(getRandomPosition(GRID_SIZE, GRID_SIZE));
-                gameScore.reset();
-              }
             }
           }
         }
@@ -77,26 +72,21 @@ int main() {
       food.setPosition(getRandomPosition(GRID_SIZE, GRID_SIZE));
       gameScore.increase();
     }
+    if (game.over()) {
+      snake.reset();
+      food.setPosition(getRandomPosition(GRID_SIZE, GRID_SIZE));
+      gameScore.reset();
+    }
 
     window.clear();
     window.draw(scoreBg);
     gameScore.draw(window);
 
-    switch (game.getState()) {
-    case GameState::NotStarted:
-      game.displayMsg();
-      break;
-    case GameState::Started:
+    if (game.started()) {
       snake.render(window);
       food.render(window);
-      break;
-    case GameState::Paused:
-      game.setMessage("Paused - Press Space")->displayMsg();
-      break;
-    case GameState::Over:
-      game.setMessage("Lost ! - Press Enter")->displayMsg();
-      break;
-    }
+    } else
+      game.displayMsg();
 
     window.display();
   }

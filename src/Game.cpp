@@ -19,6 +19,7 @@ void Game::start() {
 void Game::togglePause() {
   if (state == GameState::Started) {
     state = GameState::Paused;
+    message.setString("Paused - Press Space");
   } else if (state == GameState::Paused) {
     state = GameState::Started;
   }
@@ -27,6 +28,7 @@ void Game::togglePause() {
 void Game::end() {
   if (state == GameState::Started || state == GameState::Paused) {
     state = GameState::Over;
+    message.setString("Lost ! - Press Enter");
   }
 }
 
@@ -39,11 +41,6 @@ bool Game::paused() const { return state == GameState::Paused; }
 
 bool Game::over() const { return state == GameState::Over; }
 
-GameState Game::getState() { return this->state; }
-Game *Game::setMessage(std::string msg) {
-  message.setString(msg);
-  return this;
-}
 void Game::displayMsg() { window->draw(this->message); }
 
 // Score class

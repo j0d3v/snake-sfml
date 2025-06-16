@@ -32,8 +32,6 @@ public:
   bool paused() const;
   bool over() const;
 
-  GameState getState();
-  Game *setMessage(std::string msg);
   void displayMsg();
 };
 
